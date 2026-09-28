@@ -142,6 +142,7 @@ def and_(a, b): return Blk("operator_and", {"OPERAND1": (a, None), "OPERAND2": (
 def or_(a, b): return Blk("operator_or", {"OPERAND1": (a, None), "OPERAND2": (b, None)})
 def not_(a): return Blk("operator_not", {"OPERAND": (a, None)})
 def rand(a, b): return Blk("operator_random", {"FROM": (a, NUM), "TO": (b, NUM)})
+def contains(a, b): return Blk("operator_contains", {"STRING1": (a, TEXT), "STRING2": (b, TEXT)})
 def mathop(op, x): return Blk("operator_mathop", {"NUM": (x, NUM)}, {"OPERATOR": [op, None]})
 def join(*parts):
     """Scratch join takes two strings; longer lists nest to the right."""

@@ -55,13 +55,24 @@ const frames = n => sleep(n * 1000 / 30 + 30);
     };
     const heard = s => played.includes(`Sfx:${s}`);
     const ok = msg => console.log('  ok -', msg);
+    // force the ship to die repeatedly until game over, answer the high-score prompt if one appears,
+    // and wait for the menu (the prompt only shows up on a new high score)
+    const finishGame = async (ship, initials) => {
+        question = null;
+        ship.isTouchingObject = o => o === 'Asteroid';
+        await waitFor(() => g('state') === 'gameover', 'game over', 15000);
+        await waitFor(() => g('state') === 'menu' || question !== null, 'menu or high score prompt', 6000);
+        if (question !== null) rt.emit('ANSWER', initials);
+        await waitFor(() => g('state') === 'menu' && buttons().length === 4, 'back to menu', 5000);
+        delete ship.isTouchingObject;
+    };
 
     vm.start();
     vm.greenFlag();
 
     console.log('menu');
-    await waitFor(() => g('state') === 'menu' && buttons().length === 3, 'menu buttons');
-    assert.deepStrictEqual(buttons(), ['config', 'credits', 'play']);
+    await waitFor(() => g('state') === 'menu' && buttons().length === 4, 'menu buttons');
+    assert.deepStrictEqual(buttons(), ['build', 'config', 'credits', 'play']);
     assert(sprite('Title').visible && costume(sprite('Title')) === 'classic title');
     assert.strictEqual(costume(stage), 'classic space');
     await waitFor(() => clones('Asteroid').length === 6, 'attract rocks');
@@ -106,6 +117,7 @@ const frames = n => sleep(n * 1000 / 30 + 30);
     console.log('play (nyan, WASD)');
     await click('play');
     assert.strictEqual(g('state'), 'play');
+    assert.strictEqual(g('mode'), 'arcade', 'PLAY starts arcade mode');
     assert.deepStrictEqual(buttons(), []);
     await waitFor(() => g('level') === 1 && clones('Asteroid').length === 4, 'wave 1');
     assert.strictEqual(g('rocks'), 4);
@@ -239,7 +251,7 @@ const frames = n => sleep(n * 1000 / 30 + 30);
     const finalScore = g('score');
     await waitFor(() => question !== null, 'high score prompt', 5000);
     rt.emit('ANSWER', 'dgn');
-    await waitFor(() => g('state') === 'menu' && buttons().length === 3, 'back to menu');
+    await waitFor(() => g('state') === 'menu' && buttons().length === 4, 'back to menu');
     assert.strictEqual(g('high score'), finalScore);
     assert.strictEqual(g('high name'), 'dgn');
     delete ship.isTouchingObject;
@@ -265,12 +277,84 @@ const frames = n => sleep(n * 1000 / 30 + 30);
     for (const r of clones('Asteroid')) { r.lookupVariableByNameAndType('tier').value = 1; hitOnce(r, 'Bullet'); }
     await waitFor(() => g('level') === 2 && clones('Asteroid').length === 6, 'wave 2', 5000);
     assert.strictEqual(g('rocks'), 6);
-    ok('wave 2 = 6 rocks');
+    assert.strictEqual(g('state'), 'play', 'arcade never pauses for an upgrade pick');
+    assert.strictEqual(clones('Card').length, 0, 'arcade mode never shows upgrade cards');
+    ok('wave 2 = 6 rocks, no upgrade screen in arcade mode');
 
     // removed on request: no looping heartbeat, no saucer siren/bark
     assert(!sprite('Sfx').sprite.sounds.some(s => /beat|ufo/.test(s.name)), 'no beat/ufo sounds in the project');
     assert(!played.some(p => /beat|ufo/.test(p)), 'no beat/ufo sound ever played');
     ok(`only one-shot effects + thrust played: ${[...new Set(played.map(p => p.replace(/^Sfx:/, '')))].sort().join(', ')}`);
+
+    console.log('build mode');
+    await finishGame(ship, 'aaa');
+    const clearWave = () => { for (const r of clones('Asteroid')) { r.lookupVariableByNameAndType('tier').value = 1; hitOnce(r, 'Bullet'); } };
+
+    await click('build');
+    assert.strictEqual(g('mode'), 'build', 'BUILD MODE sets mode to build');
+    assert.strictEqual(g('state'), 'play');
+    await waitFor(() => g('level') === 1 && clones('Asteroid').length === 4, 'build wave 1');
+
+    clearWave();
+    await waitFor(() => g('state') === 'upgrade', 'upgrade screen appears', 5000);
+    await waitFor(() => clones('Card').length === 3, '3 upgrade cards shown', 3000);
+    const choices = [1, 2, 3].map(i => g(`choice ${i}`));
+    assert.strictEqual(new Set(choices).size, 3, `3 distinct choices (got ${choices})`);
+    assert(sprite('Panel').visible, 'upgrade header panel shown');
+    ok('clearing wave 1 in build mode opens the upgrade screen with 3 distinct choices and 3 cards');
+
+    const pickedId = choices[0].split(' ')[0];
+    await tap('1');
+    await waitFor(() => g('state') === 'play', 'upgrade applied, game resumes', 3000);
+    assert.strictEqual(pickedId === 'life' ? true : g(`lv ${pickedId}`) === 1, true, `${pickedId} level applied`);
+    assert.strictEqual(clones('Card').length, 0, 'cards cleared after picking');
+    await waitFor(() => g('level') === 2 && clones('Asteroid').length > 0, 'wave 2 spawns after picking', 5000);
+    ok('pressing "1" applies the first choice, hides the cards and spawns wave 2');
+
+    await waitFor(() => clones('Bullet').length === 0, 'no bullets before multishot test');
+    setG('lv multi', 2);
+    await tap(' ');
+    await frames(1);
+    const burst = clones('Bullet');
+    assert.strictEqual(burst.length, 3, 'multishot lv2 fires 3 bullets');
+    assert.strictEqual(new Set(burst.map(b => b.direction)).size, 3, 'the 3 bullets fly in 3 different directions');
+    setG('lv multi', 0);
+    ok('multishot lv2 fires a 3-bullet spread');
+
+    await waitFor(() => clones('Bullet').length === 0, 'no bullets before pierce test');
+    setG('lv pierce', 1);
+    await tap(' ');
+    const pierced = clones('Bullet')[0];
+    assert(pierced, 'pierce bullet fired');
+    hitOnce(pierced, 'Asteroid');
+    await frames(2);
+    assert(clones('Bullet').includes(pierced), 'a lv1 pierce bullet survives its first forced rock hit');
+    setG('lv pierce', 0);
+    ok('pierce lv1 bullet survives one hit');
+
+    setG('lv shield', 1); setG('shield', 1);
+    const livesBeforeShield = g('lives');
+    hitOnce(ship, 'Asteroid');
+    await frames(2);
+    assert.strictEqual(g('shield'), 0, 'shield charge consumed');
+    assert.strictEqual(g('lives'), livesBeforeShield, 'no life lost while a shield charge absorbs the hit');
+    assert(ship.visible, 'ship survives the hit');
+    await waitFor(() => local(ship, 'invuln') === 0, 'invulnerability window ends', 3000);
+    setG('lv shield', 0);
+    ok('shield lv1 absorbs a forced rock collision instead of costing a life');
+
+    setG('lv hyper', 1);
+    const livesBeforeHyper = g('lives');
+    const rndHyper = Math.random;
+    Math.random = () => 0;  // always roll the 1-in-8 malfunction condition
+    for (let i = 0; i < 20; i++) {
+        await tap(g('key hyper'));
+        await waitFor(() => ship.visible && local(ship, 'busy') === 0, 'hyperspace return', 2000);
+    }
+    Math.random = rndHyper;
+    assert.strictEqual(g('lives'), livesBeforeHyper, 'hyper lv1 hyperspace never malfunctions');
+    setG('lv hyper', 0);
+    ok('hyper lv1: hyperspace never malfunctions across 20 forced rolls');
 
     vm.stopAll();
     console.log('ALL CHECKS PASSED');

@@ -222,13 +222,42 @@ CONTROL_HELP = {
     "wasd": ("TURN: A / D     THRUST: W", "FIRE: SPACE     HYPERSPACE: S"),
 }
 
+# build mode upgrades: id -> (max level, display name, 2-line description)
+UPGRADES = {
+    "multi": (2, "MULTISHOT", ["+1 BULLET", "PER SHOT"]),
+    "rapid": (3, "RAPID FIRE", ["FASTER", "COOLDOWN"]),
+    "pierce": (2, "PIERCING", ["SHOTS PASS", "THROUGH"]),
+    "engine": (3, "ENGINE", ["FASTER", "TIGHTER TURN"]),
+    "shield": (2, "SHIELD", ["ABSORBS", "ONE HIT"]),
+    "hyper": (1, "STABILIZER", ["SAFE", "HYPERSPACE"]),
+}
+LIFE_CARD = ("EXTRA LIFE", ["+1 SHIP"])
+
 BUTTON_LABELS = {
-    "play": "PLAY", "config": "CONFIG", "credits": "CREDITS", "back": "BACK",
+    "play": "PLAY", "build": "BUILD MODE", "config": "CONFIG", "credits": "CREDITS", "back": "BACK",
     "sound on": "SOUND: ON", "sound off": "SOUND: OFF",
     **{f"volume {v}": f"VOLUME: {v}%" for v in (100, 75, 50, 25)},
     "controls arrows": "CONTROLS: ARROWS", "controls wasd": "CONTROLS: WASD",
     "style classic": "STYLE: CLASSIC", "style nyan": "STYLE: NYAN CAT",
 }
+
+
+def upgrade_header(style):
+    color = "#fff" if style == "classic" else "#ff99ff"
+    return svg(480, 90, text(240, 34, "CHOOSE AN UPGRADE", 26, color)
+               + text(240, 64, "PRESS 1 2 3 OR CLICK", 14, "#aaa"))
+
+
+def card(style, name, desc_lines, level, max_level):
+    fg = "#fff" if style == "classic" else "#ff99ff"
+    bg = "#000" if style == "classic" else "#1a1a4d"
+    lv_text = f"LV {level}" + (" MAX" if level >= max_level else "")
+    body = (f'<rect x="2" y="2" width="126" height="156" rx="6" fill="{bg}" stroke="{fg}" stroke-width="3"/>'
+            + text(65, 34, name, 15, fg)
+            + "".join(text(65, 58 + i * 16, d, 11, fg) for i, d in enumerate(desc_lines))
+            + text(65, 145, lv_text, 13, fg))
+    return svg(130, 160, body)
+
 
 GLYPHS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-:!?."
 
@@ -280,7 +309,11 @@ def costumes():
         + [(f"config {k}", lines_panel([(40, "CONFIG", 30, "#fff"), (250, "CONTROLS", 14, "#aaa"),
                                         (270, a, 12, "#ddd"), (288, b, 12, "#ddd")],
                                        [(160, 8, 160, 44), (70, 236, 340, 60)]), 240, 180)
-           for k, (a, b) in CONTROL_HELP.items()],
+           for k, (a, b) in CONTROL_HELP.items()]
+        + [(f"{s} upgrade header", upgrade_header(s), 240, 45) for s in STYLES],
+        "Card": [(f"{s} card {uid} {lv}", card(s, name, desc, lv, mx), 65, 80)
+                 for s in STYLES for uid, (mx, name, desc) in UPGRADES.items() for lv in range(1, mx + 1)]
+        + [(f"{s} card life 1", card(s, *LIFE_CARD, 1, 1), 65, 80) for s in STYLES],
         "Title": [(f"{s} title", title(s), 210, 70) for s in STYLES],
         "Button": [(f"btn {k}", button(v), 110, 15) for k, v in BUTTON_LABELS.items()],
         "HUD": [("c space", glyph(" "), 6, 9)]

@@ -1,6 +1,11 @@
 # Asteroids no Scratch
 
-Remake do Asteroids (Atari, 1979) para o Scratch 3, com menu, configurações, créditos, recorde com iniciais e um estilo secreto Nyan Cat. Projeto da formação "Fundamentos de Lógica de Programação" do processo seletivo 2027–28 da Apple Developer Academy PUCPR.
+Remake do Asteroids (Atari, 1979) para o Scratch 3, com menu, configurações, créditos, recorde com iniciais e um estilo secreto Nyan Cat.
+
+Dois modos:
+
+- **Arcade**: as regras do fliperama original.
+- **Build**: depois de cada onda, escolha 1 de 3 upgrades sorteados (tiro múltiplo, tiro rápido, tiro perfurante, motor, escudo, hiperespaço seguro, vida extra). Os upgrades se acumulam em níveis e formam uma build diferente a cada partida. Projeto da formação "Fundamentos de Lógica de Programação" do processo seletivo 2027–28 da Apple Developer Academy PUCPR.
 
 ## Entregas
 

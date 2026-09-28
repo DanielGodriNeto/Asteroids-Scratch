@@ -98,6 +98,7 @@
 
   <h2>Próximos passos</h2>
   <p>Com mais tempo, eu adicionaria mais estilos e talvez um modo de jogo diferente. O mais ambicioso seria um pequeno roguelike: você escolheria entre itens e habilidades diferentes e iria passando por fases cada vez mais difíceis, com chefes.</p>
+  <p>Já comecei pelo primeiro passo: o modo Build, inspirado em <i>Vampire Survivors</i> e <i>Mycopunk</i>. Depois de cada onda, o jogador escolhe 1 de 3 upgrades sorteados, que se acumulam em níveis e formam uma build diferente a cada partida (Anexo A). O que falta para o roguelike completo são as fases diferentes e os chefes.</p>
 
   <h2>O que levo</h2>
   <p>O Scratch é uma linguagem muito simples, então é preciso ser muito criativo e aberto a soluções diferentes. Quando não existe um bloco pronto para o que você quer, você precisa montar a solução com o que tem. Isso me ensinou muito sobre lidar com problemas usando abordagens diferentes. Um exemplo foi a nave nascendo dentro da pedra: o Scratch não tem um bloco que diga se o centro da tela está livre, então usei um círculo invisível que verifica se está tocando em alguma coisa.</p>
@@ -106,11 +107,11 @@
 <section>
   <p class="eyebrow">Anexo A · O jogo</p>
   <h1>As telas do jogo</h1>
-  <p>Os anexos mostram o jogo e os detalhes técnicos citados na reflexão. Abaixo, capturas do projeto rodando: o jogo tem três telas de menu e dois estilos visuais, que mudam toda a arte e todos os sons.</p>
+  <p>Os anexos mostram o jogo e os detalhes técnicos citados na reflexão. Abaixo, capturas do projeto rodando: o jogo tem dois modos (Arcade e Build) e dois estilos visuais, que mudam toda a arte e todos os sons.</p>
   <div class="shots">
-    <div><img src="img/1-menu.png" alt=""><p><b>1. Menu.</b> PLAY, CONFIG e CREDITS, com asteroides passando ao fundo e o recorde no topo.</p></div>
+    <div><img src="img/1-menu.png" alt=""><p><b>1. Menu.</b> PLAY, BUILD MODE, CONFIG e CREDITS, com asteroides passando ao fundo e o recorde no topo.</p></div>
     <div><img src="img/2-config.png" alt=""><p><b>2. Configurações.</b> Som, volume em 4 níveis, setas ou WASD e o estilo visual. A ajuda de controles muda junto.</p></div>
-    <div><img src="img/3-credits.png" alt=""><p><b>3. Créditos.</b> Quem fez, o jogo original e a homenagem ao Nyan Cat.</p></div>
+    <div><img src="img/3-build.png" alt=""><p><b>3. Modo Build.</b> Depois de cada onda, o jogador escolhe 1 de 3 upgrades, que se acumulam e formam uma build.</p></div>
     <div><img src="img/4-classic.png" alt=""><p><b>4. Estilo clássico.</b> O aviso "WAVE 1" e o "+20" subindo no lugar onde a pedra foi atingida e se dividiu.</p></div>
     <div><img src="img/5-nyan.png" alt=""><p><b>5. Estilo nyan.</b> A nave vira o Nyan Cat com rastro de arco-íris, e os asteroides viram novelos de lã.</p></div>
     <div><img src="img/6-gameover.png" alt=""><p><b>6. Fim de jogo.</b> No estilo nyan, o "GAME OVER" ganha um "meow...".</p></div>
@@ -141,6 +142,9 @@
     <li><b>Recorde:</b> o jogo guarda a maior pontuação e pede suas iniciais, como nos fliperamas.</li>
   </ul>
 
+  <h2>Modo Build</h2>
+  <p>Um segundo modo, no menu. Depois de cada onda, o jogo pausa e mostra 3 upgrades sorteados; o jogador escolhe um clicando ou apertando 1, 2 ou 3. Os upgrades se acumulam em níveis: tiro múltiplo (até 3 tiros), tiro rápido (segurar para atirar), tiro perfurante (atravessa pedras), motor (mais empuxo e giro), escudo (absorve batidas e recarrega a cada onda), hiperespaço seguro (nunca falha) e vida extra. O modo Arcade continua igual ao fliperama.</p>
+
   <div class="callout"><b>O easter egg:</b> em Configurações, o estilo troca de "classic" para "nyan". A nave vira o Nyan Cat, os asteroides viram novelos de lã e o disco voador vira um cachorro num disco. Todos os sons também mudam. Desenhei os novelos e o cachorro no Aseprite.</div>
 </section>
 
@@ -154,7 +158,7 @@
     <tr><td>Laços de repetição</td><td><i>sempre</i>: o laço principal da nave (girar, acelerar, atirar, checar colisão). <i>repita até</i>: o tiro anda até <code>life</code> chegar a 0. <i>espere até</i>: a próxima onda só começa quando <code>rocks</code> = 0.</td></tr>
     <tr><td>Eventos e mensagens</td><td>O jogo é uma sequência de estados trocados por mensagens: <code>menu</code> → <code>start game</code> → <code>new wave</code> → <code>game over</code> → <code>menu</code>. Cada sprite só reage às mensagens que lhe interessam.</td></tr>
     <tr><td>Clones</td><td>Asteroides, tiros, partículas de explosão, números de pontuação, rastro de arco-íris e botões são clones. Um asteroide atingido cria dois clones menores de si mesmo e depois se apaga.</td></tr>
-    <tr><td>Listas</td><td>As listas <code>fx</code> e <code>pops</code> funcionam como filas: cada explosão entra com x, y e tipo, e um único sprite vai tirando da fila e criando as partículas ou o número de pontos.</td></tr>
+    <tr><td>Listas</td><td>As listas <code>fx</code> e <code>pops</code> funcionam como filas: cada explosão entra com x, y e tipo, e um único sprite vai tirando da fila e criando as partículas ou o número de pontos. No modo Build, a lista <code>pool</code> guarda os upgrades disponíveis, e o jogo sorteia 3 diferentes dela.</td></tr>
     <tr><td>Operadores</td><td>Para a nave andar para onde está apontando, uso seno e cosseno da direção dela. Para ela ir parando aos poucos, a velocidade é multiplicada por 0,98 a cada quadro.</td></tr>
     <tr><td>Aleatoriedade</td><td>Posição e direção dos asteroides, a falha do hiperespaço (sorteio de 1 a 8) e o momento em que o disco aparece.</td></tr>
     <tr><td>Blocos personalizados</td><td>A lógica fica dividida em blocos com nome, como <code>steer</code>, <code>shoot</code>, <code>hyperspace</code>, <code>die</code>, <code>split</code> e <code>wrap</code>. O placar é desenhado com a caneta por um bloco que roda "sem atualizar a tela", para não piscar.</td></tr>

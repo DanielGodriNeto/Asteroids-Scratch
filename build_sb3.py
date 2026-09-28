@@ -213,7 +213,10 @@ def asteroid_scripts():
         # menu backdrop: a few harmless rocks drifting around
         [when_msg("menu"), delete_if_clone(),
          repeat(6, set_var("tier", rand(1, 3)), set_var("speed", rand(0.4, 1.0)), set_var("safe", 0),
-                goto("_random_"), point_dir(rand(0, 359)), create_clone("_myself_"))],
+                goto("_random_"), point_dir(rand(0, 359)),
+                # this loop spans several frames; skip any iteration left over after the player already
+                # clicked a menu button, so a leftover clone can't outlive the "start game" clone-wipe
+                if_(eq(V("state"), "menu"), create_clone("_myself_")))],
         [when_msg("start game"), delete_clone()],
         [when_msg("style changed"), call("look")],
         [when_msg("new wave"),

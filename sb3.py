@@ -104,6 +104,7 @@ def change_effect(effect, v): return Blk("looks_changeeffectby", {"CHANGE": (v, 
 def set_ghost(v): return set_effect("GHOST", v)
 def clear_effects(): return Blk("looks_cleargraphiceffects")
 def set_size(v): return Blk("looks_setsizeto", {"SIZE": (v, NUM)})
+def size(): return Blk("looks_size")
 def go_front(): return Blk("looks_gotofrontback", fields={"FRONT_BACK": ["front", None]})
 
 # --- sound ---

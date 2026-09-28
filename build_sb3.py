@@ -227,6 +227,7 @@ def asteroid_scripts():
                 point_dir(rand(0, 359)), change_var("rocks", 1), create_clone("_myself_"))],
         [when_clone(),
          set_var("clone", 1), set_var("shape", rand(1, 3)), call("look"), show(),
+         if_(gt(V("safe"), 0), call("pop size")),  # only freshly split children get the spawn "pop"
          forever(move(V("speed")), call("wrap"),
                  if_else(gt(V("safe"), 0), [change_var("safe", -1)], [call("check hits")]))],
         [define("look"),
@@ -234,6 +235,13 @@ def asteroid_scripts():
          if_(eq(V("tier"), 3), set_size(100)),
          if_(eq(V("tier"), 2), set_size(50)),
          if_(eq(V("tier"), 1), set_size(25))],
+        [define("pop size"),
+         if_(eq(V("tier"), 3), set_var("target", 100)),
+         if_(eq(V("tier"), 2), set_var("target", 50)),
+         if_(eq(V("tier"), 1), set_var("target", 25)),
+         set_size(mul(V("target"), 1.25)),  # spawn ~25% bigger, ease back to the tier's normal size
+         repeat(5, set_size(add(size(), mul(sub(V("target"), size()), 0.5)))),
+         set_size(V("target"))],
         [define("check hits"),
          if_(touching("Bullet"), set_var("award", 1), call("split")),
          if_(touching("Ship"), set_var("award", 1), call("split")),
@@ -500,7 +508,7 @@ def button_scripts():
 # layer order = list order (later sprites draw on top)
 SPRITES = [
     # name, local variables, scripts, extra sprite props
-    ("Asteroid", ["tier", "speed", "safe", "shape", "award", "clone", "count"], asteroid_scripts,
+    ("Asteroid", ["tier", "speed", "safe", "shape", "award", "clone", "count", "target"], asteroid_scripts,
      {"rotationStyle": "don't rotate"}),
     ("Particle", ["kind", "life", "speed", "dx", "dy"], particle_scripts, {}),
     ("Trail", [], trail_scripts, {}),

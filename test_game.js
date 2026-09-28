@@ -157,7 +157,10 @@ const frames = n => sleep(n * 1000 / 30 + 30);
     // splitting (forced collisions)
     const score0 = g('score');
     hitOnce(clones('Asteroid')[0], 'Bullet');
-    await frames(3);
+    await frames(1);
+    const poppedChild = clones('Asteroid').find(r => local(r, 'safe') > 0);
+    assert(poppedChild && poppedChild.size > 50, `split child spawns oversized (size=${poppedChild && poppedChild.size})`);
+    await frames(2);
     assert.deepStrictEqual(clones('Asteroid').map(r => local(r, 'tier')).sort(), [2, 2, 3, 3, 3]);
     assert.strictEqual(g('rocks'), 5);
     assert.strictEqual(g('score') - score0, 20);

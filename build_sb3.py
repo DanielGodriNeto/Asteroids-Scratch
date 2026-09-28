@@ -9,7 +9,7 @@ from sb3 import *  # noqa: F403 — the block DSL reads best unqualified
 
 GLOBALS = {
     "state": "menu", "score": 0, "lives": 3, "level": 0, "rocks": 0, "shots": 0, "next life": 10000,
-    "thrusting": 0, "high score": 0, "high name": "---",
+    "thrusting": 0, "high score": 0, "high name": "---", "banner": "", "last level": 0,
     # settings survive between games (only the config screen changes them)
     "sound": "on", "volume": 100, "controls": "arrows", "style": "classic",
     "key left": "left arrow", "key right": "right arrow", "key thrust": "up arrow",
@@ -85,6 +85,12 @@ def stage_scripts():
         [when_msg("start game"),
          forever(wait_until(not_(lt(V("score"), V("next life")))),
                  change_var("lives", 1), change_var("next life", 10000), broadcast("sfx life"))],
+        # wave banner: its own thread so the 1.5s display never blocks the wave-spawn loop above
+        [when_msg("start game"),
+         set_var("banner", ""), set_var("last level", 0),
+         forever(if_(not_(eq(V("level"), V("last level"))),
+                     set_var("last level", V("level")), set_var("banner", join("WAVE ", V("level"))),
+                     wait(1.5), set_var("banner", "")))],
         [when_msg("game over"),
          stop_other(), set_var("state", "gameover"),
          wait(3),
@@ -388,7 +394,7 @@ def sfx_scripts():
 def hud_scripts():
     def signature():
         return join(V("state"), "|", V("score"), "|", V("lives"), "|", V("high score"), "|",
-                    V("high name"), "|", V("style"))
+                    V("high name"), "|", V("style"), "|", V("banner"))
 
     return [
         [when_flag(), hide(), pen_clear(), set_var("sig", ""),
@@ -404,6 +410,8 @@ def hud_scripts():
          if_(eq(V("state"), "menu"),
              set_y(162), set_var("text", join("HI SCORE ", V("high score"), " ", V("high name"))),
              call("draw centered")),
+         if_(and_(eq(V("state"), "play"), not_(eq(V("banner"), ""))),
+             goto_xy(0, 40), set_var("text", V("banner")), call("draw centered")),
          hide()],
         [define("draw centered"), set_x(sub(6, mul(length(V("text")), 6))), call("draw text")],
         [define("draw text"),

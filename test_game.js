@@ -109,6 +109,8 @@ const frames = n => sleep(n * 1000 / 30 + 30);
     assert.deepStrictEqual(buttons(), []);
     await waitFor(() => g('level') === 1 && clones('Asteroid').length === 4, 'wave 1');
     assert.strictEqual(g('rocks'), 4);
+    assert.strictEqual(g('banner'), 'WAVE 1', 'wave banner shows');
+    await waitFor(() => g('banner') === '', 'wave banner clears');
     const ship = sprite('Ship');
     assert(ship.visible && costume(ship).startsWith('nyan ship'));
     assert.deepStrictEqual(['key left', 'key right', 'key thrust', 'key fire', 'key hyper'].map(g), ['a', 'd', 'w', 'space', 's']);

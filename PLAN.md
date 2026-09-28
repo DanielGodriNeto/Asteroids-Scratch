@@ -8,6 +8,7 @@
 - [x] Arcade rules: tap-to-fire, max 4 shots on screen, hyperspace (1-in-8 malfunction), 20/50/100 pts,
       waves 4→6→8→10→11, UFOs large (200, random shots) / small (1000, aimed), extra life every 10,000,
       debris explosions (heartbeat + saucer sounds removed on request), respawn only when the center is clear, high score + initials
+- [x] Game feel: floating score pop-ups, "WAVE N" banner, ship-death screen flash, split rocks pop to size
 
 ## Risks / edge cases (each one is a checklist item)
 - [x] Clone deletion cuts off its sounds → all audio plays from one Sfx sprite via broadcasts
@@ -23,6 +24,13 @@
 - [x] HUD via pen stamping must not flash the HUD sprite → redraw runs without screen refresh
 - [x] Scratch fencing keeps sprites partly on stage → wrap at ±235 and keep smallest rock ≥ 22px
 - [x] Player shots don't wrap (changed on request): they vanish on `touching edge`; rocks, ship and UFO shots still wrap
+- [x] Score pop-ups reuse the `fx`-list FIFO pattern (`pops` list) so many simultaneous hits don't race each other
+- [x] Wave banner runs as its own concurrent stage thread (tracks `last level`) so its 1.5s wait never blocks
+      the wave-spawn `broadcast_wait` loop
+- [x] Split "pop" only applies to freshly split children (gated on `safe > 0`), so menu/wave rocks are unaffected;
+      the ease loop is a plain (non-warp) repeat, so it spans a few real frames — that's fine since it finishes
+      before the rock's own collision-checking forever loop starts, and it only extends (never shortens) the
+      existing spawn-protection window
 
 ## Verify
 - [x] Headless scratch-vm test: menu/config/credits flows, style + sound routing, waves, firing cap, splits,

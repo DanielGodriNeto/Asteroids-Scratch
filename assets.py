@@ -259,6 +259,8 @@ def costumes():
         "UFO": [("classic ufo", classic_ufo(), 32, 16), ("nyan ufo", *pixel_art("Dog-OVNI.aseprite", 2))],
         "Ship": [("classic ship 1", classic_ship(False), 15, 12), ("classic ship 2", classic_ship(True), 15, 12),
                  ("nyan ship 1", svg(41, 27, cat[1]), 20, 12), ("nyan ship 2", svg(41, 27, cat[2]), 20, 12)],
+        "Popup": [(f"{s} pop {v}", svg(50, 20, text(25, 15, f"+{v}", 14, "#fff" if s == "classic" else "#ff99ff")),
+                   25, 15) for s in STYLES for v in (20, 50, 100, 200, 1000)],
         "SafeZone": [("zone", svg(150, 150, '<circle cx="75" cy="75" r="74" fill="#fff"/>'), 75, 75)],
         "Panel": [(f"{s} gameover", svg(480, 120, text(240, 60, "GAME OVER", 48, color)
                                          + (text(240, 95, "meow...", 18, "#fff") if s == "nyan" else "")), 240, 60)

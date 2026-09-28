@@ -15,7 +15,8 @@ GLOBALS = {
     "key left": "left arrow", "key right": "right arrow", "key thrust": "up arrow",
     "key fire": "space", "key hyper": "down arrow",
 }
-LISTS = ["fx"]  # explosion queue: x, y, kind (rock|ship) triples consumed by the Particle sprite
+LISTS = ["fx",  # explosion queue: x, y, kind (rock|ship) triples consumed by the Particle sprite
+         "pops"]  # score popup queue: x, y, value triples consumed by the Popup sprite
 SFX_EVENTS = ["fire", "boom 1", "boom 2", "boom 3", "ship boom", "life", "click"]
 BROADCASTS = ["menu", "config", "credits", "start game", "new wave", "game over", "respawn check",
               "settings changed", "style changed"] + [f"sfx {e}" for e in SFX_EVENTS]
@@ -40,6 +41,10 @@ def any_touching(*objs):
 
 def push_fx(kind):
     return [add_to("fx", x_pos()), add_to("fx", y_pos()), add_to("fx", kind)]
+
+
+def push_pop(value):
+    return [add_to("pops", x_pos()), add_to("pops", y_pos()), add_to("pops", value)]
 
 
 def wrap_def():
@@ -232,9 +237,9 @@ def asteroid_scripts():
          broadcast(join("sfx boom ", V("tier")), default="sfx boom 3"),
          *push_fx("rock"),
          if_(eq(V("award"), 1),
-             if_(eq(V("tier"), 3), change_var("score", 20)),
-             if_(eq(V("tier"), 2), change_var("score", 50)),
-             if_(eq(V("tier"), 1), change_var("score", 100))),
+             if_(eq(V("tier"), 3), change_var("score", 20), *push_pop(20)),
+             if_(eq(V("tier"), 2), change_var("score", 50), *push_pop(50)),
+             if_(eq(V("tier"), 1), change_var("score", 100), *push_pop(100))),
          if_else(gt(V("tier"), 1),
                  [change_var("tier", -1),
                   set_var("speed", mul(V("speed"), rand(1.2, 1.6))),
@@ -279,7 +284,9 @@ def ufo_scripts():
          hide()],
         [define("check hits"),
          if_(any_touching("Bullet", "Ship"),
-             if_else(eq(V("small"), 1), [change_var("score", 1000)], [change_var("score", 200)]),
+             if_else(eq(V("small"), 1),
+                     [change_var("score", 1000), *push_pop(1000)],
+                     [change_var("score", 200), *push_pop(200)]),
              call("explode")),
          if_(and_(eq(V("dead"), 0), touching("Asteroid")), call("explode"))],
         [define("explode"), set_var("dead", 1), *push_fx("ship"), broadcast("sfx boom 3"), wait(0)],
@@ -329,6 +336,22 @@ def particle_scripts():
          show(),
          repeat(V("life"), change_x(V("dx")), change_y(V("dy")), turn_right(9),
                 change_effect("GHOST", div(100, V("life")))),
+         delete_clone()],
+    ]
+
+
+def popup_scripts():
+    return [
+        # the original drains the pops queue and spawns a floating "+N" where each score was earned
+        [when_flag(), hide(), delete_all("pops"),
+         forever(repeat_until(eq(list_length("pops"), 0),
+                              goto_xy(item(1, "pops"), item(2, "pops")), set_var("value", item(3, "pops")),
+                              delete_item(1, "pops"), delete_item(1, "pops"), delete_item(1, "pops"),
+                              create_clone("_myself_")))],
+        *cleared_on_screen_change(),
+        [when_clone(),
+         switch_costume(join(V("style"), " pop ", V("value"))), show(),
+         repeat(24, change_y(0.83), change_effect("GHOST", 4.2)),  # ~20px up over ~0.8s while fading out
          delete_clone()],
     ]
 
@@ -465,6 +488,7 @@ SPRITES = [
     ("UfoShot", ["life"], ufoshot_scripts, {}),
     ("UFO", ["small", "dx", "vy", "shot timer", "dead"], ufo_scripts, {"rotationStyle": "don't rotate"}),
     ("Ship", ["vx", "vy", "busy", "fire held", "hyper held", "frame"], ship_scripts, {"direction": 0}),
+    ("Popup", ["value"], popup_scripts, {}),
     ("SafeZone", [], safezone_scripts, {}),
     ("Panel", [], panel_scripts, {}),
     ("Title", [], title_scripts, {}),

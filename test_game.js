@@ -160,6 +160,7 @@ const frames = n => sleep(n * 1000 / 30 + 30);
     assert.strictEqual(g('rocks'), 5);
     assert.strictEqual(g('score') - score0, 20);
     assert(heard('nyan boom 3'));
+    await waitFor(() => clones('Popup').length > 0, 'score popup appears');
     await waitFor(() => clones('Particle').length > 0, 'debris particles');
     const medium = clones('Asteroid').find(r => local(r, 'tier') === 2);
     hitOnce(medium, 'UfoShot');
@@ -210,6 +211,7 @@ const frames = n => sleep(n * 1000 / 30 + 30);
     await frames(3);
     assert(!ufo.visible);
     assert.strictEqual(g('score') - s1, small_ufo ? 1000 : 200);
+    await waitFor(() => clones('Popup').length > 0, 'saucer score popup appears');
     ok(`${small_ufo ? 'small' : 'large'} dog saucer flew, fired bones, was shot for ${small_ufo ? 1000 : 200}`);
 
     // death + respawn

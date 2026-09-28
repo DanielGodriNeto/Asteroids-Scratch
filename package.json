@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "scripts": {
+    "build": "python build_sb3.py",
+    "test": "python build_sb3.py && node test_game.js asteroids.sb3"
+  },
+  "devDependencies": {
+    "scratch-vm": "^5.0.300"
+  }
+}

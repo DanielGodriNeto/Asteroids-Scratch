@@ -62,9 +62,9 @@
 <section>
   <p class="eyebrow">Contexto</p>
   <h1>Por que o Asteroids</h1>
-  <p>Escolhi o Asteroids porque gosto muito de jogar e porque é um jogo que jogo desde muito novo: foi meu pai quem me ensinou. Por isso eu não queria só "uma nave que atira em pedras". Quis refazer a versão de fliperama da forma mais fiel possível, com as regras originais: as pedras que se dividem, o disco voador que mira em você, o hiperespaço que às vezes falha e a vida extra a cada 10.000 pontos.</p>
-  <p>Também queria que o jogo tivesse cara de jogo de verdade, e não de exercício: menu, tela de configurações, créditos, recorde com as iniciais do jogador e sons em todas as ações.</p>
-  <div class="box"><b>Recorte do projeto:</b> um Asteroids completo e fiel ao fliperama, feito só com os blocos do Scratch, com um segundo estilo visual escondido nas configurações.</div>
+  <p>Escolhi o Asteroids porque gosto muito de jogar e porque é um jogo que jogo desde muito novo. Foi meu pai quem me ensinou, numa máquina de fliperama, quando eu tinha uns 6 anos, por volta de 2012 e 2013.</p>
+  <p>Por isso o jogo segue as regras daquele fliperama: as pedras que se dividem, o disco voador que mira em você, o hiperespaço que às vezes falha e a vida extra a cada 10.000 pontos. Onde uma regra do original deixava o jogo confuso, preferi simplificar (veja a Parte 3). O projeto levou cerca de 2 a 3 semanas.</p>
+  <div class="box"><b>Recorte do projeto:</b> um Asteroids fiel ao fliperama onde importa e mais simples onde o original confundia, feito com os blocos do Scratch, com um segundo estilo visual escondido nas configurações.</div>
 </section>
 
 <section>
@@ -151,8 +151,16 @@
     <tr><td>Clones escrevendo ao mesmo tempo</td><td>Várias pedras explodindo no mesmo quadro escreviam a posição na mesma variável, e as partículas apareciam no lugar errado.</td><td>Troquei a variável pela lista <code>fx</code>, uma fila: cada explosão entra na fila e é atendida na ordem.</td></tr>
   </table>
 
+  <h2>Decisões de design: simplificar</h2>
+  <table>
+    <colgroup><col style="width:20%"><col style="width:38%"><col></colgroup>
+    <tr><th>Decisão</th><th>No fliperama original</th><th>No meu jogo, e por quê</th></tr>
+    <tr><td>Tiros sem dar a volta na tela</td><td>Os tiros da nave saem por uma borda e voltam pela outra.</td><td>Os tiros somem ao chegar na borda. Tiros voltando pelo outro lado deixavam o jogo um pouco confuso.</td></tr>
+    <tr><td>Sem som de batimento e de disco</td><td>Um "batimento" de fundo acelera durante a onda, e o disco voador tem um som próprio enquanto está na tela.</td><td>Tirei os dois. Pela minha experiência com game design, eles não faziam tanta diferença, e o jogo ficou mais simples.</td></tr>
+  </table>
+
   <h2>O teste com meu irmão</h2>
-  <p>Meu irmão jogou e achou o jogo muito bom para um jogo de Scratch. Ele também encontrou um bug que eu não tinha visto: clicando muitas vezes seguidas no botão de estilo, o jogo começava a travar visualmente. Isso ajudou muito, porque é o tipo de coisa que quem fez o jogo não testa: eu clicava uma vez e seguia em frente. Com o bug encontrado, consegui corrigi-lo.</p>
+  <p>Meu irmão, de 14 anos, jogou, chegou bem longe e se divertiu muito. Ele achou o jogo muito bom para um jogo de Scratch e também encontrou um bug que eu não tinha visto: clicando muitas vezes seguidas no botão de estilo, o jogo começava a travar visualmente. Isso ajudou muito, porque é o tipo de coisa que quem fez o jogo não testa: eu clicava uma vez e seguia em frente. Com o bug encontrado, consegui corrigi-lo.</p>
 
   <h2>Polimento</h2>
   <p>Depois que o jogo já funcionava, acrescentei pequenos retornos visuais para cada ação: a pontuação aparece subindo no lugar onde a pedra ou o disco foi atingido, cada onda começa com um aviso "WAVE N" no centro da tela, a tela pisca de leve quando a nave explode, e os asteroides menores nascem um pouco maiores e "encolhem" para o tamanho certo.</p>
@@ -161,9 +169,10 @@
 <section>
   <p class="eyebrow">Reflexão</p>
   <h1>O que construir um jogo no Scratch me ensinou</h1>
-  <p>Escolhi o Asteroids porque é um jogo que jogo desde muito novo e que meu pai me ensinou. Por isso eu queria que ele fosse fiel ao original, com as regras de verdade do fliperama. O estilo Nyan Cat é o meu easter egg: gosto de sempre esconder algum, principalmente por causa do filme <i>Jogador Nº 1</i>.</p>
+  <p>Escolhi o Asteroids porque é um jogo que jogo desde muito novo: meu pai me ensinou numa máquina de fliperama quando eu tinha uns 6 anos. Por isso eu queria que ele seguisse as regras daquele fliperama. O estilo Nyan Cat é o meu easter egg: gosto de sempre esconder algum, principalmente por causa do filme <i>Jogador Nº 1</i>. É a parte de que mais me orgulho. Achei o estilo único, e desenhar a pixel art foi ótimo.</p>
   <p>As partes mais difíceis foram a nave nascendo dentro de uma pedra e os problemas com clones. Clones parecem simples, mas eles recebem as mesmas mensagens que o original, levam os sons junto quando são apagados e disputam as mesmas variáveis. Cada um desses problemas pediu uma solução diferente.</p>
-  <p>Meu irmão jogou e achou o jogo muito bom para um jogo de Scratch, e encontrou um bug quando clicava muito no botão de estilo: o jogo travava visualmente. Isso ajudou muito, e o bug foi corrigido. É a mesma lição da formação de design: testar com outra pessoa mostra o que quem fez não enxerga.</p>
+  <p>Meu irmão, de 14 anos, jogou, chegou bem longe e se divertiu muito. Ele achou o jogo muito bom para um jogo de Scratch e encontrou um bug quando clicava muito no botão de estilo: o jogo travava visualmente. Isso ajudou muito, e o bug foi corrigido. É a mesma lição da formação de design: testar com outra pessoa mostra o que quem fez não enxerga.</p>
+  <p>Também aprendi sobre game design, sobre o que faz um jogo ser bom: às vezes, quanto mais simples, melhor. Tirei os tiros que davam a volta na tela porque deixavam o jogo confuso, e tirei sons do original que não faziam tanta diferença. Às vezes a simplicidade é uma bênção.</p>
   <p>O Scratch é uma linguagem muito simples, então é preciso ser muito criativo e aberto a soluções diferentes. Quando não existe um bloco pronto para o que você quer, você precisa montar a solução com o que tem. Isso me ensinou muito sobre lidar com problemas usando abordagens diferentes.</p>
 </section>
 

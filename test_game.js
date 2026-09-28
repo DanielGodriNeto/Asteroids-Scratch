@@ -76,7 +76,7 @@ const frames = n => sleep(n * 1000 / 30 + 30);
     assert(sprite('Title').visible && costume(sprite('Title')) === 'classic title');
     assert.strictEqual(costume(stage), 'classic space');
     await waitFor(() => clones('Asteroid').length === 6, 'attract rocks');
-    ok('title, 3 buttons, 6 drifting rocks, classic backdrop');
+    ok('title, 4 buttons, 6 drifting rocks, classic backdrop');
 
     console.log('credits');
     await click('credits');

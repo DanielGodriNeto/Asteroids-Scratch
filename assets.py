@@ -251,7 +251,8 @@ def upgrade_header(style):
 def card(style, name, desc_lines, level, max_level):
     fg = "#fff" if style == "classic" else "#ff99ff"
     bg = "#000" if style == "classic" else "#1a1a4d"
-    lv_text = f"LV {level}" + (" MAX" if level >= max_level else "")
+    # max_level None = unlimited (extra life): no level line to show
+    lv_text = "" if max_level is None else f"LV {level}" + (" MAX" if level >= max_level else "")
     body = (f'<rect x="2" y="2" width="126" height="156" rx="6" fill="{bg}" stroke="{fg}" stroke-width="3"/>'
             + text(65, 34, name, 15, fg)
             + "".join(text(65, 58 + i * 16, d, 11, fg) for i, d in enumerate(desc_lines))
@@ -313,7 +314,7 @@ def costumes():
         + [(f"{s} upgrade header", upgrade_header(s), 240, 45) for s in STYLES],
         "Card": [(f"{s} card {uid} {lv}", card(s, name, desc, lv, mx), 65, 80)
                  for s in STYLES for uid, (mx, name, desc) in UPGRADES.items() for lv in range(1, mx + 1)]
-        + [(f"{s} card life 1", card(s, *LIFE_CARD, 1, 1), 65, 80) for s in STYLES],
+        + [(f"{s} card life 1", card(s, *LIFE_CARD, 1, None), 65, 80) for s in STYLES],
         "Title": [(f"{s} title", title(s), 210, 70) for s in STYLES],
         "Button": [(f"btn {k}", button(v), 110, 15) for k, v in BUTTON_LABELS.items()],
         "HUD": [("c space", glyph(" "), 6, 9)]

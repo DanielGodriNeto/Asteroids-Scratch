@@ -14,14 +14,20 @@ GLOBALS = {
     "sound": "on", "volume": 100, "controls": "arrows", "style": "classic",
     "key left": "left arrow", "key right": "right arrow", "key thrust": "up arrow",
     "key fire": "space", "key hyper": "down arrow",
+    # build mode: current run's mode + upgrade levels (reset on "start game")
+    "mode": "arcade", "shield": 0, "burst": 0, "picked": "", "idx": 0,
+    "choice 1": "", "choice 2": "", "choice 3": "",
+    **{f"lv {uid}": 0 for uid in assets.UPGRADES},
 }
 LISTS = ["fx",  # explosion queue: x, y, kind (rock|ship) triples consumed by the Particle sprite
-         "pops"]  # score popup queue: x, y, value triples consumed by the Popup sprite
+         "pops",  # score popup queue: x, y, value triples consumed by the Popup sprite
+         "pool"]  # build mode: upgrade options not yet at max, drained into `choice 1..3` each wave
 SFX_EVENTS = ["fire", "boom 1", "boom 2", "boom 3", "ship boom", "life", "click"]
 BROADCASTS = ["menu", "config", "credits", "start game", "new wave", "game over", "respawn check",
-              "settings changed", "style changed", "flash"] + [f"sfx {e}" for e in SFX_EVENTS]
+              "settings changed", "style changed", "flash",
+              "show upgrades", "hide upgrades"] + [f"sfx {e}" for e in SFX_EVENTS]
 
-MENU_BUTTONS = [("play", -20), ("config", -60), ("credits", -100)]
+MENU_BUTTONS = [("play", -20), ("build", -55), ("config", -90), ("credits", -125)]
 CONFIG_BUTTONS = [("sound", 95), ("volume", 55), ("controls", 15), ("style", -25), ("back", -150)]
 SETTINGS = ["sound", "volume", "controls", "style"]
 
@@ -60,12 +66,48 @@ def delete_if_clone():
     return if_(eq(V("clone"), 1), delete_clone())
 
 
-def cleared_on_screen_change():
-    """Clones vanish when the game starts or returns to the menu (the original ignores it)."""
-    return [[when_msg("menu"), delete_clone()], [when_msg("start game"), delete_clone()]]
+def clones_cleared_on(*msgs):
+    """Clones vanish on each broadcast in `msgs` (the original ignores it)."""
+    return [[when_msg(m), delete_clone()] for m in msgs]
+
+
+def cleared_on_screen_change(*extra):
+    """Clones vanish when the game starts, returns to the menu, or (build mode) an upgrade is offered."""
+    return clones_cleared_on("menu", "start game", *extra)
 
 
 # ---------------- stage: game flow ----------------
+
+def choose_upgrade_def():
+    """Stage custom block: pause for the wave-clear upgrade pick (build mode only)."""
+    def offer(uid, mx):
+        return if_(lt(V(f"lv {uid}"), mx), add_to("pool", join(f"{uid} ", add(V(f"lv {uid}"), 1))))
+
+    def pick(n):
+        return if_(gt(list_length("pool"), 0),
+                   set_var("idx", rand(1, list_length("pool"))),
+                   set_var(f"choice {n}", item(V("idx"), "pool")),
+                   delete_item(V("idx"), "pool"))
+
+    def apply(uid):
+        return if_(contains(V("picked"), uid), change_var(f"lv {uid}", 1))
+
+    return [
+        define("choose upgrade"),
+        set_var("state", "upgrade"), delete_all("pool"),
+        *[offer(uid, mx) for uid, (mx, *_r) in assets.UPGRADES.items()],
+        add_to("pool", "life 1"),
+        set_var("choice 1", ""), set_var("choice 2", ""), set_var("choice 3", ""),
+        pick(1), pick(2), pick(3),
+        set_var("picked", ""), broadcast_wait("show upgrades"),
+        repeat_until(not_(eq(V("picked"), "")),
+                     *[if_(and_(key(str(n)), not_(eq(V(f"choice {n}"), ""))), set_var("picked", V(f"choice {n}")))
+                       for n in (1, 2, 3)]),
+        *[apply(uid) for uid in assets.UPGRADES],
+        if_(contains(V("picked"), "life"), change_var("lives", 1)),
+        set_var("shots", 0), broadcast_wait("hide upgrades"), set_var("state", "play"),
+    ]
+
 
 def stage_scripts():
     return [
@@ -76,12 +118,16 @@ def stage_scripts():
         [when_msg("credits"), set_var("state", "credits")],
         [when_msg("start game"),
          set_var("state", "play"), set_var("score", 0), set_var("lives", 3), set_var("level", 0),
-         set_var("rocks", 0), set_var("shots", 0), set_var("next life", 10000),
+         set_var("rocks", 0), set_var("shots", 0), set_var("next life", 10000), set_var("shield", 0),
+         *[set_var(f"lv {uid}", 0) for uid in assets.UPGRADES],
          wait(1),
          forever(wait_until(eq(V("rocks"), 0)),
-                 if_(gt(V("level"), 0), wait(1.5)),
-                 change_var("level", 1),
+                 if_else(and_(gt(V("level"), 0), eq(V("mode"), "build")),
+                         [call("choose upgrade")],
+                         [if_(gt(V("level"), 0), wait(1.5))]),
+                 change_var("level", 1), set_var("shield", V("lv shield")),
                  broadcast_wait("new wave"))],
+        choose_upgrade_def(),
         [when_msg("start game"),
          forever(wait_until(not_(lt(V("score"), V("next life")))),
                  change_var("lives", 1), change_var("next life", 10000), broadcast("sfx life"))],
@@ -112,9 +158,12 @@ def ship_scripts():
         [when_msg("start game"),
          call("apply controls"),
          goto_xy(0, 0), point_dir(0), set_var("vx", 0), set_var("vy", 0),
-         set_var("fire held", 1), set_var("hyper held", 1),
+         set_var("fire held", 1), set_var("hyper held", 1), set_var("invuln", 0), set_var("cooldown", 0),
          clear_effects(), call("look"), go_front(), show(), set_var("busy", 0),
-         forever(if_(eq(V("busy"), 0), call("steer"), call("shoot"), call("hyperspace key"), call("collide")))],
+         forever(if_(and_(eq(V("busy"), 0), eq(V("state"), "play")),
+                     call("steer"), call("shoot"), call("hyperspace key"), call("collide")))],
+        # build mode: the ship sits idle (but visible) while an upgrade is being chosen
+        [when_msg("show upgrades"), set_var("thrusting", 0)],
         [define("apply controls"),
          if_else(eq(V("controls"), "wasd"),
                  [set_var("key left", "a"), set_var("key right", "d"),
@@ -123,11 +172,11 @@ def ship_scripts():
                   set_var("key thrust", "up arrow"), set_var("key hyper", "down arrow")]),
          set_var("key fire", "space")],
         [define("steer"),
-         if_(key(V("key left")), turn_left(6)),
-         if_(key(V("key right")), turn_right(6)),
+         if_(key(V("key left")), turn_left(add(6, V("lv engine")))),
+         if_(key(V("key right")), turn_right(add(6, V("lv engine")))),
          if_else(key(V("key thrust")),
-                 [change_var("vx", mul(mathop("sin", direction()), 0.2)),
-                  change_var("vy", mul(mathop("cos", direction()), 0.2)),
+                 [change_var("vx", mul(mathop("sin", direction()), add(0.2, mul(0.07, V("lv engine"))))),
+                  change_var("vy", mul(mathop("cos", direction()), add(0.2, mul(0.07, V("lv engine"))))),
                   set_var("thrusting", 1)],
                  [set_var("thrusting", 0)]),
          set_var("vx", mul(V("vx"), 0.98)), set_var("vy", mul(V("vy"), 0.98)),
@@ -141,13 +190,23 @@ def ship_scripts():
                  [if_else(and_(eq(V("thrusting"), 1), eq(mod(V("frame"), 2), 0)),
                           [switch_costume("classic ship 2")], [switch_costume("classic ship 1")])],
                  [switch_costume(join("nyan ship ", add(mod(mathop("floor", div(V("frame"), 4)), 2), 1)))])],
-        # arcade rules: one shot per key press, at most 4 on screen
+        # arcade rules (lv rapid 0): one shot per key press, at most 4 on screen
+        # build mode: rapid fire auto-repeats on a cooldown, multishot fires N bullets in a spread,
+        # and the on-screen shot cap grows with both upgrades
         [define("shoot"),
+         if_(gt(V("cooldown"), 0), change_var("cooldown", -1)),
          if_else(key(V("key fire")),
-                 [if_(and_(eq(V("fire held"), 0), lt(V("shots"), 4)),
-                      change_var("shots", 1), create_clone("Bullet"), broadcast("sfx fire")),
+                 [if_(or_(and_(eq(V("lv rapid"), 0), eq(V("fire held"), 0)),
+                          and_(gt(V("lv rapid"), 0), eq(V("cooldown"), 0))),
+                      if_(lt(V("shots"), add(mul(4, add(1, V("lv multi"))), mul(2, V("lv rapid")))),
+                          call("fire shot"),
+                          set_var("cooldown", sub(12, mul(3, V("lv rapid")))))),
                   set_var("fire held", 1)],
                  [set_var("fire held", 0)])],
+        [define("fire shot"),
+         change_var("shots", add(1, V("lv multi"))), set_var("burst", 1),
+         repeat(add(1, V("lv multi")), create_clone("Bullet")),
+         broadcast("sfx fire")],
         [define("hyperspace key"),
          if_else(key(V("key hyper")),
                  [if_(eq(V("hyper held"), 0), set_var("hyper held", 1), call("hyperspace"))],
@@ -157,9 +216,18 @@ def ship_scripts():
          wait(0.6),
          goto_xy(rand(-210, 210), rand(-150, 150)), set_var("vx", 0), set_var("vy", 0),
          show(),
-         if_else(eq(rand(1, 8), 1), [call("die")], [set_var("busy", 0)])],  # 1-in-8 malfunction
+         # 1-in-8 malfunction, unless the stabilizer upgrade is owned
+         if_else(and_(eq(rand(1, 8), 1), eq(V("lv hyper"), 0)), [call("die")], [set_var("busy", 0)])],
         [define("collide"),
-         if_(any_touching("Asteroid", "UFO", "UfoShot"), call("die"))],
+         if_else(gt(V("invuln"), 0),
+                 [change_var("invuln", -1), call("blink"), if_(eq(V("invuln"), 0), clear_effects())],
+                 [if_(any_touching("Asteroid", "UFO", "UfoShot"), call("hit"))])],
+        [define("blink"),
+         if_else(lt(mod(V("invuln"), 8), 4), [set_ghost(70)], [set_ghost(0)])],
+        [define("hit"),
+         if_else(and_(eq(V("mode"), "build"), gt(V("shield"), 0)),
+                 [change_var("shield", -1), set_var("invuln", 45)],
+                 [call("die")])],
         [define("die"),
          set_var("busy", 1), set_var("thrusting", 0),
          *push_fx("ship"), broadcast("sfx ship boom"), broadcast("flash"),
@@ -177,19 +245,32 @@ def ship_scripts():
 def bullet_scripts():
     return [
         [when_flag(), hide()],
-        *cleared_on_screen_change(),
+        *cleared_on_screen_change("show upgrades"),
         [when_clone(),
+         # race-free multishot spread: the ship sets `burst` to 1 before creating N clones; each clone
+         # claims the next burst number as its own before doing anything else (no other block runs in between)
+         set_var("k", V("burst")), change_var("burst", 1),
          switch_costume(join(V("style"), " bullet")),
-         goto("Ship"), point_dir(attr_of("direction", "Ship")), move(14),
+         goto("Ship"),
+         point_dir(add(attr_of("direction", "Ship"),
+                       mul(sub(V("k"), div(add(2, V("lv multi")), 2)), 12))),
+         move(14),
          set_var("bvx", add(mul(mathop("sin", direction()), 9), attr_of("vx", "Ship"))),
          set_var("bvy", add(mul(mathop("cos", direction()), 9), attr_of("vy", "Ship"))),
-         set_var("life", 28), show(),
+         set_var("life", 28), set_var("charges", V("lv pierce")), set_var("immune", 0), show(),
          repeat_until(eq(V("life"), 0),
                       change_x(V("bvx")), change_y(V("bvy")), change_var("life", -1),
                       # shots don't wrap around: they vanish when they reach the screen edge
                       if_(touching("_edge_"), set_var("life", 0)),
-                      # linger one frame so the target sees the hit before we vanish
-                      if_(any_touching("Asteroid", "UFO"), wait(0), set_var("life", 0))),
+                      if_else(gt(V("immune"), 0),
+                              [change_var("immune", -1)],
+                              # linger one frame so the target sees the hit; pierce keeps flying instead of
+                              # dying, then ignores touches for a few frames so it can't burn charges on the
+                              # same/child rock
+                              [if_(any_touching("Asteroid", "UFO"), wait(0),
+                                   if_else(gt(V("charges"), 0),
+                                           [change_var("charges", -1), set_var("immune", 4)],
+                                           [set_var("life", 0)]))])),
          change_var("shots", -1), delete_clone()],
     ]
 
@@ -247,7 +328,9 @@ def asteroid_scripts():
          set_size(V("target"))],
         [define("check hits"),
          if_(touching("Bullet"), set_var("award", 1), call("split")),
-         if_(touching("Ship"), set_var("award", 1), call("split")),
+         # a shielded, invulnerable ship can't be rammed for points/splits
+         if_(and_(touching("Ship"), not_(gt(attr_of("invuln", "Ship"), 0))),
+             set_var("award", 1), call("split")),
          if_(any_touching("UFO", "UfoShot"), set_var("award", 0), call("split"))],
         # The twist: a hit rock spawns two smaller copies of itself, then vanishes.
         [define("split"),
@@ -288,7 +371,7 @@ def ufo_scripts():
          if_else(eq(rand(1, 2), 1), [set_x(-235)], [set_x(235), set_var("dx", mul(V("dx"), -1))]),
          set_y(rand(-140, 140)), set_var("vy", 0), set_var("shot timer", 30), set_var("dead", 0),
          show(),
-         repeat_until(or_(eq(V("dead"), 1), leaving),
+         repeat_until(or_(or_(eq(V("dead"), 1), leaving), eq(V("state"), "upgrade")),
                       change_x(V("dx")), change_y(V("vy")),
                       if_(gt(y_pos(), 175), set_y(-170)),
                       if_(lt(y_pos(), -175), set_y(170)),
@@ -313,7 +396,7 @@ def ufo_scripts():
 def ufoshot_scripts():
     return [
         [when_flag(), hide()],
-        *cleared_on_screen_change(),
+        *cleared_on_screen_change("show upgrades"),
         [when_clone(),
          switch_costume(join(V("style"), " ufo shot")),
          goto("UFO"),
@@ -417,7 +500,7 @@ def sfx_scripts():
 def hud_scripts():
     def signature():
         return join(V("state"), "|", V("score"), "|", V("lives"), "|", V("high score"), "|",
-                    V("high name"), "|", V("style"), "|", V("banner"))
+                    V("high name"), "|", V("style"), "|", V("banner"), "|", V("mode"), "|", V("shield"))
 
     return [
         [when_flag(), hide(), pen_clear(), set_var("sig", ""),
@@ -430,6 +513,8 @@ def hud_scripts():
              goto_xy(-226, 140),
              repeat(V("lives"), switch_costume(join(V("style"), " life")), stamp(), change_x(16)),
              set_y(162), set_var("text", join("HI ", V("high score"))), call("draw centered")),
+         if_(and_(or_(eq(V("state"), "play"), eq(V("state"), "gameover")), eq(V("mode"), "build")),
+             goto_xy(-226, 120), set_var("text", join("SHIELD ", V("shield"))), call("draw text")),
          if_(eq(V("state"), "menu"),
              set_y(162), set_var("text", join("HI SCORE ", V("high score"), " ", V("high name"))),
              call("draw centered")),
@@ -466,6 +551,8 @@ def panel_scripts():
         [when_msg("settings changed"), switch_costume(join("config ", V("controls")))],
         [when_msg("credits"), switch_costume("credits"), goto_xy(0, 0), show()],
         [when_msg("game over"), switch_costume(join(V("style"), " gameover")), goto_xy(0, 20), go_front(), show()],
+        [when_msg("show upgrades"), switch_costume(join(V("style"), " upgrade header")), goto_xy(0, 130), show()],
+        [when_msg("hide upgrades"), hide()],
     ]
 
 
@@ -492,7 +579,8 @@ def button_scripts():
          switch_costume(join("btn ", V("action"))),
          *[if_(eq(V("action"), s), switch_costume(join("btn ", s, " ", V(s)))) for s in SETTINGS]],
         [define("act"),
-         if_(eq(V("action"), "play"), broadcast("start game")),
+         if_(eq(V("action"), "play"), set_var("mode", "arcade"), broadcast("start game")),
+         if_(eq(V("action"), "build"), set_var("mode", "build"), broadcast("start game")),
          if_(eq(V("action"), "config"), broadcast("config")),
          if_(eq(V("action"), "credits"), broadcast("credits")),
          if_(eq(V("action"), "back"), broadcast("menu")),
@@ -506,6 +594,23 @@ def button_scripts():
     ]
 
 
+def card_scripts():
+    xs = (-150, 0, 150)
+    return [
+        [when_flag(), hide(), set_var("clone", 0)],
+        *clones_cleared_on("hide upgrades", "menu", "start game"),
+        [when_msg("show upgrades"), delete_if_clone(),
+         *[if_(not_(eq(V(f"choice {i}"), "")),
+               set_var("choice", V(f"choice {i}")), goto_xy(x, -10),
+               switch_costume(join(V("style"), " card ", V("choice"))),
+               create_clone("_myself_"))
+           for i, x in enumerate(xs, start=1)]],
+        [when_clone(), set_var("clone", 1), go_front(), show(),
+         forever(if_else(touching("_mouse_"), [set_effect("BRIGHTNESS", 30)], [set_effect("BRIGHTNESS", 0)]))],
+        [when_clicked(), set_var("picked", V("choice"))],
+    ]
+
+
 # ---------------- project assembly ----------------
 
 # layer order = list order (later sprites draw on top)
@@ -515,14 +620,16 @@ SPRITES = [
      {"rotationStyle": "don't rotate"}),
     ("Particle", ["kind", "life", "speed", "dx", "dy"], particle_scripts, {}),
     ("Trail", [], trail_scripts, {}),
-    ("Bullet", ["bvx", "bvy", "life"], bullet_scripts, {}),
+    ("Bullet", ["bvx", "bvy", "life", "k", "charges", "immune"], bullet_scripts, {}),
     ("UfoShot", ["life"], ufoshot_scripts, {}),
     ("UFO", ["small", "dx", "vy", "shot timer", "dead"], ufo_scripts, {"rotationStyle": "don't rotate"}),
-    ("Ship", ["vx", "vy", "busy", "fire held", "hyper held", "frame"], ship_scripts, {"direction": 0}),
+    ("Ship", ["vx", "vy", "busy", "fire held", "hyper held", "frame", "invuln", "cooldown"], ship_scripts,
+     {"direction": 0}),
     ("Popup", ["value"], popup_scripts, {}),
     ("SafeZone", [], safezone_scripts, {}),
     ("Flash", [], flash_scripts, {}),
     ("Panel", [], panel_scripts, {}),
+    ("Card", ["clone", "choice"], card_scripts, {}),
     ("Title", [], title_scripts, {}),
     ("Button", ["action", "clone"], button_scripts, {}),
     ("HUD", ["sig", "text", "i"], hud_scripts, {}),

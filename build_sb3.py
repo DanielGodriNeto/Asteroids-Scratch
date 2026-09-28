@@ -19,7 +19,7 @@ LISTS = ["fx",  # explosion queue: x, y, kind (rock|ship) triples consumed by th
          "pops"]  # score popup queue: x, y, value triples consumed by the Popup sprite
 SFX_EVENTS = ["fire", "boom 1", "boom 2", "boom 3", "ship boom", "life", "click"]
 BROADCASTS = ["menu", "config", "credits", "start game", "new wave", "game over", "respawn check",
-              "settings changed", "style changed"] + [f"sfx {e}" for e in SFX_EVENTS]
+              "settings changed", "style changed", "flash"] + [f"sfx {e}" for e in SFX_EVENTS]
 
 MENU_BUTTONS = [("play", -20), ("config", -60), ("credits", -100)]
 CONFIG_BUTTONS = [("sound", 95), ("volume", 55), ("controls", 15), ("style", -25), ("back", -150)]
@@ -162,7 +162,7 @@ def ship_scripts():
          if_(any_touching("Asteroid", "UFO", "UfoShot"), call("die"))],
         [define("die"),
          set_var("busy", 1), set_var("thrusting", 0),
-         *push_fx("ship"), broadcast("sfx ship boom"),
+         *push_fx("ship"), broadcast("sfx ship boom"), broadcast("flash"),
          wait(0),  # stay visible one more frame so the rock/UFO we hit registers the crash too
          hide(), change_var("lives", -1),
          if_else(eq(V("lives"), 0),
@@ -373,6 +373,18 @@ def safezone_scripts():
     ]
 
 
+def flash_scripts():
+    """A single brief white flash on ship death — not a strobe, so it stays one short pulse."""
+    return [
+        [when_flag(), hide()],
+        [when_msg("menu"), hide()],
+        [when_msg("flash"),
+         set_ghost(65), show(),
+         repeat(8, change_effect("GHOST", 4.375)),  # 65 -> 100 (fully faded) over ~8 frames
+         hide()],
+    ]
+
+
 def sfx_scripts():
     """Every sound plays here: clones can't (deleting a clone cuts its sounds off)."""
     def sound_on():
@@ -498,6 +510,7 @@ SPRITES = [
     ("Ship", ["vx", "vy", "busy", "fire held", "hyper held", "frame"], ship_scripts, {"direction": 0}),
     ("Popup", ["value"], popup_scripts, {}),
     ("SafeZone", [], safezone_scripts, {}),
+    ("Flash", [], flash_scripts, {}),
     ("Panel", [], panel_scripts, {}),
     ("Title", [], title_scripts, {}),
     ("Button", ["action", "clone"], button_scripts, {}),

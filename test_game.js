@@ -217,11 +217,14 @@ const frames = n => sleep(n * 1000 / 30 + 30);
     ok(`${small_ufo ? 'small' : 'large'} dog saucer flew, fired bones, was shot for ${small_ufo ? 1000 : 200}`);
 
     // death + respawn
+    const flash = sprite('Flash');
     const lives1 = g('lives');
     hitOnce(ship, 'Asteroid');
     await frames(3);
     assert(!ship.visible && g('lives') === lives1 - 1);
     assert(heard('nyan ship boom'));
+    assert(flash.visible, 'death flash shown');
+    await waitFor(() => !flash.visible, 'death flash fades');
     await waitFor(() => ship.visible && local(ship, 'busy') === 0, 'respawn', 4000);
     assert.strictEqual(ship.x, 0); assert.strictEqual(ship.y, 0);
     ok('death, debris, respawn at center');

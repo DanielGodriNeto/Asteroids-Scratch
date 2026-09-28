@@ -262,6 +262,7 @@ def costumes():
         "Popup": [(f"{s} pop {v}", svg(50, 20, text(25, 15, f"+{v}", 14, "#fff" if s == "classic" else "#ff99ff")),
                    25, 15) for s in STYLES for v in (20, 50, 100, 200, 1000)],
         "SafeZone": [("zone", svg(150, 150, '<circle cx="75" cy="75" r="74" fill="#fff"/>'), 75, 75)],
+        "Flash": [("flash", svg(480, 360, '<rect width="480" height="360" fill="#fff"/>'), 240, 180)],
         "Panel": [(f"{s} gameover", svg(480, 120, text(240, 60, "GAME OVER", 48, color)
                                          + (text(240, 95, "meow...", 18, "#fff") if s == "nyan" else "")), 240, 60)
                   for s, color in (("classic", "#fff"), ("nyan", "#ff99ff"))]

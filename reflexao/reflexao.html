@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Asteroids no Scratch</title>
+<style>
+  @page { size: A4; margin: 18mm 17mm; }
+  :root { --ink: #1d2126; --muted: #5b6470; --rule: #d9dde2; --soft: #f4f6f8; --green: #22a35a; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", system-ui, sans-serif; color: var(--ink); font-size: 10.5pt; line-height: 1.6; margin: 0; }
+  section { break-before: page; }
+  section.cover { break-before: auto; padding-top: 70mm; }
+  .eyebrow { font-size: 7.5pt; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 0 0 4px; }
+  h1 { font-size: 20pt; line-height: 1.2; margin: 0 0 12px; padding-bottom: 6px; border-bottom: 2px solid var(--ink); }
+  .cover h1 { font-size: 26pt; border: 0; padding: 0; margin-bottom: 8px; }
+  .lede { font-size: 13pt; color: var(--muted); margin: 0 0 26px; line-height: 1.5; }
+  .byline { color: var(--muted); margin: 0; }
+  h2 { font-size: 12.5pt; margin: 20px 0 6px; }
+  p { margin: 0 0 9px; }
+  .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-top: 26px; }
+  .card { border: 1px solid var(--rule); border-radius: 5px; padding: 8px 9px; font-size: 8pt; line-height: 1.4; }
+  .card b { display: block; font-size: 8.5pt; margin-bottom: 2px; }
+  table { width: 100%; border-collapse: collapse; font-size: 8.8pt; line-height: 1.45; margin: 6px 0 12px; }
+  th { background: var(--soft); text-align: left; font-weight: 600; }
+  th, td { border: 1px solid var(--rule); padding: 5px 7px; vertical-align: top; }
+  td:first-child { font-weight: 600; white-space: nowrap; }
+  tr { break-inside: avoid; }
+  .callout { background: #f1f8f3; border-left: 4px solid var(--green); padding: 9px 13px; margin: 12px 0; }
+  code, .blocks { font-family: Consolas, monospace; font-size: 8.8pt; }
+  .blocks { background: var(--soft); border: 1px solid var(--rule); border-radius: 5px; padding: 9px 12px; white-space: pre; line-height: 1.5; margin: 8px 0 12px; }
+  .note { font-size: 8pt; color: var(--muted); }
+  ul { margin: 0 0 9px; padding-left: 18px; }
+  li { margin-bottom: 3px; }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <p class="eyebrow">Apple Developer Academy · PUCPR · Atividade de Lógica de Programação</p>
+  <h1>Asteroids no Scratch</h1>
+  <p class="lede">Um remake do clássico da Atari de 1979, com um easter egg escondido, e o que construir ele me ensinou sobre lógica de programação.</p>
+  <p class="byline">Daniel Godri Neto</p>
+  <p class="byline">27 de setembro de 2026</p>
+  <div class="cards">
+    <div class="card"><b>1 · O jogo</b>Regras, controles, telas e o easter egg</div>
+    <div class="card"><b>2 · A lógica</b>Os conceitos da aula dentro do jogo</div>
+    <div class="card"><b>3 · Os problemas</b>Bugs, soluções e o teste com meu irmão</div>
+    <div class="card"><b>4 · Reflexão</b>O que levo dessa experiência</div>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">Parte 1 · O jogo</p>
+  <h1>Um clássico que meu pai me ensinou</h1>
+  <p>Escolhi o Asteroids porque gosto muito de jogar e porque é um jogo que jogo desde muito novo: foi meu pai quem me ensinou. Quis refazer a versão de fliperama da forma mais fiel possível, com as regras originais, e não só "uma nave que atira em pedras".</p>
+
+  <h2>Como jogar</h2>
+  <table>
+    <tr><th>Ação</th><th>Setas (padrão)</th><th>WASD</th></tr>
+    <tr><td>Girar a nave</td><td>← e →</td><td>A e D</td></tr>
+    <tr><td>Acelerar</td><td>↑</td><td>W</td></tr>
+    <tr><td>Atirar</td><td>Espaço</td><td>Espaço</td></tr>
+    <tr><td>Hiperespaço</td><td>↓</td><td>S</td></tr>
+  </table>
+  <p>A nave tem inércia: ela continua deslizando depois de acelerar e perde velocidade aos poucos. Tudo que sai por uma borda da tela volta pela borda oposta, menos os tiros do jogador, que somem ao chegar na borda.</p>
+
+  <h2>Regras do fliperama</h2>
+  <ul>
+    <li><b>Ondas:</b> 4 asteroides na primeira, depois 6, 8, 10 e no máximo 11, como no original.</li>
+    <li><b>Asteroides que se dividem:</b> o grande vira dois médios, o médio vira dois pequenos, e o pequeno é destruído. Valem 20, 50 e 100 pontos.</li>
+    <li><b>Discos voadores:</b> o grande (200 pontos) atira para qualquer lado; o pequeno (1.000 pontos) mira na nave.</li>
+    <li><b>Tiros:</b> um tiro por toque na tecla, no máximo 4 na tela ao mesmo tempo.</li>
+    <li><b>Hiperespaço:</b> teletransporta a nave para um lugar aleatório, mas em 1 de cada 8 vezes ele falha e a nave explode.</li>
+    <li><b>Vidas:</b> 3 no começo e uma vida extra a cada 10.000 pontos. Ao perder uma vida, a nave só volta quando o centro da tela está livre.</li>
+    <li><b>Recorde:</b> o jogo guarda a maior pontuação e pede suas iniciais, como nos fliperamas.</li>
+  </ul>
+
+  <h2>Telas</h2>
+  <p>Menu (Jogar, Configurações, Créditos, com asteroides passando ao fundo), Configurações (som ligado ou desligado, volume em 4 níveis, setas ou WASD e o estilo visual) e Créditos. As configurações continuam valendo de uma partida para a outra.</p>
+
+  <div class="callout"><b>O easter egg:</b> em Configurações, o estilo pode trocar de "classic" para "nyan". A nave vira o Nyan Cat com rastro de arco-íris, os asteroides viram novelos de lã e o disco voador vira um cachorro num disco. Todos os sons também mudam. Desenhei os novelos e o cachorro no Aseprite. Gosto de esconder easter eggs nos meus projetos principalmente por causa do filme <i>Jogador Nº 1</i>.</div>
+</section>
+
+<section>
+  <p class="eyebrow">Parte 2 · A lógica</p>
+  <h1>Os conceitos da aula dentro do jogo</h1>
+  <table>
+    <tr><th>Conceito</th><th>Onde aparece no jogo</th></tr>
+    <tr><td>Variáveis</td><td><code>score</code>, <code>lives</code>, <code>level</code> e <code>rocks</code> controlam a partida. As configurações (<code>sound</code>, <code>volume</code>, <code>controls</code>, <code>style</code>) ficam em variáveis que o botão da bandeira verde não zera, e por isso duram entre partidas.</td></tr>
+    <tr><td>Condicionais</td><td>Cada asteroide pergunta "estou tocando num tiro?", "na nave?", "no disco?". O tamanho decide a pontuação (se <code>tier</code> = 3, soma 20; se = 2, soma 50…). No fim da partida: se <code>score</code> &gt; <code>high score</code>, o jogo pede as iniciais.</td></tr>
+    <tr><td>Laços de repetição</td><td><i>sempre</i>: o laço principal da nave (girar, acelerar, atirar, checar colisão). <i>repita até</i>: o tiro anda até <code>life</code> chegar a 0. <i>espere até</i>: a próxima onda só começa quando <code>rocks</code> = 0.</td></tr>
+    <tr><td>Eventos e mensagens</td><td>O jogo é uma sequência de estados trocados por mensagens: <code>menu</code> → <code>start game</code> → <code>new wave</code> → <code>game over</code> → <code>menu</code>. Cada sprite só reage às mensagens que lhe interessam.</td></tr>
+    <tr><td>Clones</td><td>Asteroides, tiros, partículas de explosão, rastro de arco-íris e botões são clones. Um asteroide atingido cria dois clones menores de si mesmo e depois se apaga.</td></tr>
+    <tr><td>Listas</td><td>A lista <code>fx</code> funciona como uma fila: cada explosão entra com x, y e tipo, e um único sprite vai tirando da fila e criando as partículas.</td></tr>
+    <tr><td>Operadores e matemática</td><td>O empuxo usa seno e cosseno da direção da nave; o atrito multiplica a velocidade por 0,98 a cada quadro; o resto da divisão alterna os quadros de animação.</td></tr>
+    <tr><td>Aleatoriedade</td><td>Posição e direção dos asteroides, a falha do hiperespaço (sorteio de 1 a 8) e o momento em que o disco aparece.</td></tr>
+    <tr><td>Blocos personalizados</td><td>A lógica fica dividida em blocos com nome, como <code>steer</code>, <code>shoot</code>, <code>hyperspace</code>, <code>die</code>, <code>split</code> e <code>wrap</code>. O placar é desenhado com a caneta por um bloco que roda "sem atualizar a tela", para não piscar.</td></tr>
+  </table>
+
+  <h2>Exemplo: como um asteroide se divide</h2>
+  <div class="blocks">defina split
+  se award = 1 então  some a pontuação do tamanho atual
+  se tier &gt; 1 então
+      mude tier por -1                  (fica um tamanho menor)
+      mude speed para speed × (1,2 a 1,6)
+      mude safe para 5                  (proteção: ignora o tiro que o dividiu)
+      gire e crie clone de mim mesmo
+      gire para o outro lado e crie clone de mim mesmo
+  senão
+      mude rocks por -1                 (era o menor: só desaparece)
+  apague este clone</div>
+  <p>É um exemplo pequeno, mas junta quase tudo da aula: variável, condicional, operador, aleatoriedade e clone. A variável <code>safe</code> surgiu de um bug: sem ela, os dois filhotes nasciam ainda encostados no tiro e se dividiam de novo no mesmo instante.</p>
+</section>
+
+<section>
+  <p class="eyebrow">Parte 3 · Os problemas</p>
+  <h1>Bugs, soluções e o teste com meu irmão</h1>
+  <table>
+    <tr><th>Problema</th><th>O que acontecia</th><th>Como resolvi</th></tr>
+    <tr><td>Nave nascendo<br>dentro de uma pedra</td><td>Depois de perder uma vida, a nave voltava no centro mesmo com um asteroide passando por ali, e explodia na hora.</td><td>Um sprite invisível em forma de círculo (<code>SafeZone</code>) vai para o centro, e a nave só volta quando ele não está tocando em nenhuma pedra, disco ou tiro, como no fliperama.</td></tr>
+    <tr><td>Clones recebendo<br>mensagens</td><td>Quando uma mensagem como <code>menu</code> era enviada, todos os clones também a recebiam e executavam o mesmo código do original, criando asteroides e botões repetidos.</td><td>Cada clone guarda <code>clone = 1</code>. Os scripts de troca de tela começam com "se clone = 1, apague este clone", e só o original monta a tela nova.</td></tr>
+    <tr><td>Clones cortando<br>o som</td><td>O som de explosão tocava no clone do asteroide, e quando o clone era apagado, o som parava no meio.</td><td>Todos os sons passaram a tocar de um único sprite, <code>Sfx</code>, que nunca é apagado. Os outros só mandam a mensagem, como <code>sfx boom 1</code>.</td></tr>
+    <tr><td>Clones escrevendo<br>ao mesmo tempo</td><td>Várias pedras explodindo no mesmo quadro escreviam a posição na mesma variável, e as partículas apareciam no lugar errado.</td><td>Troquei a variável pela lista <code>fx</code>, uma fila: cada explosão entra na fila e é atendida na ordem.</td></tr>
+  </table>
+
+  <h2>O teste com meu irmão</h2>
+  <p>Meu irmão jogou e achou o jogo muito bom para um jogo de Scratch. Ele também encontrou um bug que eu não tinha visto: clicando muitas vezes seguidas no botão de estilo, o jogo começava a travar visualmente. Isso ajudou muito, porque é o tipo de coisa que quem fez o jogo não testa: eu clicava uma vez e seguia em frente. Com o bug encontrado, consegui corrigi-lo.</p>
+
+  <h2>Polimento</h2>
+  <p>Depois que o jogo já funcionava, acrescentei pequenos retornos visuais para cada ação: a pontuação aparece subindo no lugar onde a pedra ou o disco foi atingido, cada onda começa com um aviso "WAVE N" no centro da tela, a tela pisca de leve quando a nave explode, e os asteroides menores nascem um pouco maiores e "encolhem" para o tamanho certo.</p>
+</section>
+
+<section>
+  <p class="eyebrow">Reflexão</p>
+  <h1>O que construir um jogo no Scratch me ensinou</h1>
+  <p>Escolhi o Asteroids porque é um jogo que jogo desde muito novo e que meu pai me ensinou. Por isso eu queria que ele fosse fiel ao original, com as regras de verdade do fliperama. O estilo Nyan Cat é o meu easter egg: gosto de sempre esconder algum, principalmente por causa do filme <i>Jogador Nº 1</i>.</p>
+  <p>As partes mais difíceis foram a nave nascendo dentro de uma pedra e os problemas com clones. Clones parecem simples, mas eles recebem as mesmas mensagens que o original, levam os sons junto quando são apagados e disputam as mesmas variáveis. Cada um desses problemas pediu uma solução diferente.</p>
+  <p>Meu irmão jogou e achou o jogo muito bom para um jogo de Scratch, e encontrou um bug quando clicava muito no botão de estilo: o jogo travava visualmente. Isso ajudou muito, e o bug foi corrigido. É a mesma lição da formação de design: testar com outra pessoa mostra o que quem fez não enxerga.</p>
+  <p>O Scratch é uma linguagem muito simples, então é preciso ser muito criativo e aberto a soluções diferentes. Quando não existe um bloco pronto para o que você quer, você precisa montar a solução com o que tem. Isso me ensinou muito sobre lidar com problemas usando abordagens diferentes.</p>
+</section>
+
+<section>
+  <p class="eyebrow">Referências</p>
+  <h1>Créditos</h1>
+  <ul>
+    <li><b>Asteroids</b>, Atari, 1979: jogo original em que as regras foram baseadas.</li>
+    <li><b>Nyan Cat</b>, criado por Chris Torres (2011): o estilo "nyan" é uma homenagem de fã.</li>
+    <li><b><i>Jogador Nº 1</i></b> (<i>Ready Player One</i>), dirigido por Steven Spielberg (2018): a inspiração para o easter egg.</li>
+    <li><b>Scratch</b> (scratch.mit.edu), MIT Media Lab: plataforma do projeto.</li>
+    <li><b>Aseprite</b>: editor de pixel art usado para desenhar os novelos de lã e o cachorro no disco voador.</li>
+  </ul>
+  <p>Arquivo entregue: <code>asteroids.sb3</code>.</p>
+</section>
+
+</body>
+</html>
